@@ -71,7 +71,6 @@ variable "desired_capacity" {
 }
 
 variable "ports" {
-
   default = {
     http = 80
     jnlp = 50000
