@@ -97,10 +97,22 @@ resource "aws_security_group" "jenkins_sg" {
 }
 
 # create a new launch configuration
+data "aws_ami" "amazon_linux_ecs" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["amzn-ami-*-amazon-ecs-optimized"]
+  }
+  filter {
+    name   = "owner-alias"
+    values = ["amazon"]
+  }
+}
 
 resource "aws_launch_configuration" "as_conf" {
   name_prefix                 = "jenkins-lc"
-  image_id                    = var.image_id
+  image_id                    = data.aws_ami.amazon_linux_ecs.id
   instance_type               = var.instance_type
   associate_public_ip_address = true
   security_groups             = [aws_security_group.jenkins_sg.id]
