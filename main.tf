@@ -1,44 +1,44 @@
 # create a new VPC jenkins_vpc
 
 resource "aws_vpc" "jenkins_vpc" {
- cidr_block = "10.0.0.0/16"
- enable_dns_hostnames = true 
- tags = {
-   name = "${var.ecs_cluster_name}"
- }
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  tags = {
+    name = "${var.ecs_cluster_name}"
+  }
 }
 
 # create an Internet Gateway jenkins_gateway
 
-resource "aws_internet_gateway" "jenkins_gateway"{
- vpc_id = "${aws_vpc.jenkins_vpc.id}"
- tags = {
-   name = "${var.ecs_cluster_name}"
+resource "aws_internet_gateway" "jenkins_gateway" {
+  vpc_id = "${aws_vpc.jenkins_vpc.id}"
+  tags = {
+    name = "${var.ecs_cluster_name}"
   }
 }
 
 # create an external routing table
 
 resource "aws_route_table" "external" {
- vpc_id = "${aws_vpc.jenkins_vpc.id}"
+  vpc_id = "${aws_vpc.jenkins_vpc.id}"
 
- route {
-  cidr_block = "0.0.0.0/0"
-  gateway_id = "${aws_internet_gateway.jenkins_gateway.id}"
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = "${aws_internet_gateway.jenkins_gateway.id}"
 
- }
+  }
 }
 
 # create a subnet
 
 resource "aws_subnet" "jenkins_subnet" {
- vpc_id = "${aws_vpc.jenkins_vpc.id}"
- cidr_block = "10.0.1.0/24"
- availability_zone = "${var.availability_zone}"
+  vpc_id            = "${aws_vpc.jenkins_vpc.id}"
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "${var.availability_zone}"
 
- tags = {
-  Name = "jenkins_subnet"
-	}
+  tags = {
+    Name = "jenkins_subnet"
+  }
 
 }
 
@@ -46,48 +46,48 @@ resource "aws_subnet" "jenkins_subnet" {
 # create a route table association
 
 resource "aws_route_table_association" "external-jenkins" {
- subnet_id = "${aws_subnet.jenkins_subnet.id}"
- route_table_id = "${aws_route_table.external.id}"
+  subnet_id      = "${aws_subnet.jenkins_subnet.id}"
+  route_table_id = "${aws_route_table.external.id}"
 }
 
 # create security groups for jenkins ec2 instance
 
 resource "aws_security_group" "jenkins_sg" {
- name        = "jenkins_sg"
- description = "Allow Https traffic"
- vpc_id = "${aws_vpc.jenkins_vpc.id}"
+  name        = "jenkins_sg"
+  description = "Allow Https traffic"
+  vpc_id      = "${aws_vpc.jenkins_vpc.id}"
 
- ingress {
+  ingress {
     description = "Https to jenkins"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-}
- 
- ingress {
+  }
+
+  ingress {
     description = "Http to jenkins"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
- 
- ingress {
+
+  ingress {
     description = "SSH to jenkins"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["124.170.234.57/32"]
-}
- ingress {
+  }
+  ingress {
     description = "JNLP"
     from_port   = 50000
     to_port     = 50000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-}
- egress {
+  }
+  egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -96,18 +96,18 @@ resource "aws_security_group" "jenkins_sg" {
 
   tags = {
     Name = "allow_secure_traffic"
-}
+  }
 }
 
 # create a new launch configuration
 
 resource "aws_launch_configuration" "as_conf" {
-  name_prefix   = "jenkins-lc"
-  image_id      = "${var.image_id}"
-  instance_type = "${var.instance_type}"
-  associate_public_ip_address = true  
-  security_groups = ["${aws_security_group.jenkins_sg.id}"]
-  iam_instance_profile = "${aws_iam_instance_profile.iam_instance_profile.name}"
+  name_prefix                 = "jenkins-lc"
+  image_id                    = "${var.image_id}"
+  instance_type               = "${var.instance_type}"
+  associate_public_ip_address = true
+  security_groups             = ["${aws_security_group.jenkins_sg.id}"]
+  iam_instance_profile        = "${aws_iam_instance_profile.iam_instance_profile.name}"
 
   lifecycle {
     create_before_destroy = true
@@ -126,7 +126,7 @@ resource "aws_autoscaling_group" "asg_jenkins" {
   desired_capacity          = "${var.desired_capacity}"
   launch_configuration      = "${aws_launch_configuration.as_conf.name}"
   vpc_zone_identifier       = ["${aws_subnet.jenkins_subnet.id}"]
-  
+
   tag {
     key                 = "Name"
     value               = "${aws_ecs_cluster.jenkins_cluster.id}_asg"
@@ -138,7 +138,7 @@ resource "aws_autoscaling_group" "asg_jenkins" {
 # create an ecs cluster jenkins
 
 resource "aws_ecs_cluster" "jenkins_cluster" {
- name = "${var.ecs_cluster_name}"
+  name = "${var.ecs_cluster_name}"
 }
 
 # create a IAM role for task execution
@@ -193,8 +193,8 @@ resource "aws_ecs_cluster" "jenkins_cluster" {
 # create an ecs task definition
 
 resource "aws_ecs_task_definition" "jenkins_task_definition" {
- family = "jenkins_task_definition"
- container_definitions = <<EOF
+  family                = "jenkins_task_definition"
+  container_definitions = <<EOF
 
  [
   
@@ -234,33 +234,33 @@ resource "aws_ecs_task_definition" "jenkins_task_definition" {
  ]
  EOF
 
- volume {
-  name = "jenkins-home"
-  host_path = "/ecs/jenkins-home"
- }
+  volume {
+    name      = "jenkins-home"
+    host_path = "/ecs/jenkins-home"
+  }
 
 }
 # create an ecs service jenkins
 
 resource "aws_ecs_service" "jenkins_service" {
- name = "jenkins_service"
- cluster = "${aws_ecs_cluster.jenkins_cluster.id}"
- task_definition = "${aws_ecs_task_definition.jenkins_task_definition.arn}"
- desired_count = "${var.desired_capacity}"
-#depends_on = ["aws_autoscaling_group.asg_jenkins"]
+  name            = "jenkins_service"
+  cluster         = "${aws_ecs_cluster.jenkins_cluster.id}"
+  task_definition = "${aws_ecs_task_definition.jenkins_task_definition.arn}"
+  desired_count   = "${var.desired_capacity}"
+  #depends_on = ["aws_autoscaling_group.asg_jenkins"]
 }
 
 # create an iam role for host
 
 resource "aws_iam_role" "host_role_jenkins" {
-  name = "host_role_${var.ecs_cluster_name}"
+  name               = "host_role_${var.ecs_cluster_name}"
   assume_role_policy = "${file("/Users/eddiezhang/DevOps/eddiez0719/terraform_jenkins/ecs_role.json")}"
 }
 
 resource "aws_iam_role_policy" "instance_role_policy_jenkins" {
-  name = "instance_role_policy_${var.ecs_cluster_name}"
+  name   = "instance_role_policy_${var.ecs_cluster_name}"
   policy = "${file("/Users/eddiezhang/DevOps/eddiez0719/terraform_jenkins/ecs_instance_role_policy.json")}"
-  role = "${aws_iam_role.host_role_jenkins.id}"
+  role   = "${aws_iam_role.host_role_jenkins.id}"
 }
 
 resource "aws_iam_instance_profile" "iam_instance_profile" {
