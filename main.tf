@@ -109,6 +109,12 @@ data "aws_ami" "amazon_linux_ecs" {
     values = ["amazon"]
   }
 }
+data "template_file" "user_data" {
+  template = "${file("${path.module}/user_data.tpl")}"
+  vars = {
+    cluster_name = var.ecs_cluster_name
+  }
+}
 
 resource "aws_launch_configuration" "as_conf" {
   name_prefix                 = "jenkins-lc"
@@ -117,6 +123,7 @@ resource "aws_launch_configuration" "as_conf" {
   associate_public_ip_address = true
   security_groups             = [aws_security_group.jenkins_sg.id]
   iam_instance_profile        = aws_iam_instance_profile.iam_instance_profile.name
+  user_data                   = data.template_file.user_data.rendered
 
   lifecycle {
     create_before_destroy = true
