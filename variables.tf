@@ -47,11 +47,6 @@ variable "container_path" {
   default     = "/var/jenkins-home"
 }
 
-variable "image_id" {
-  description = "image id"
-  default     = "ami-04f77aa5970939148"
-}
-
 variable "instance_type" {
   description = "instance type"
   default     = "t2.micro"
