@@ -250,18 +250,14 @@ resource "aws_ecs_service" "jenkins_service" {
 # create an iam role for host
 
 resource "aws_iam_role" "host_role_jenkins" {
-  name = "host_role_${var.ecs_cluster_name}"
-  assume_role_policy = file(
-    "/Users/eddiezhang/DevOps/eddiez0719/terraform_jenkins/ecs_role.json",
-  )
+  name               = "host_role_${var.ecs_cluster_name}"
+  assume_role_policy = file("${path.module}/ecs_role.json")
 }
 
 resource "aws_iam_role_policy" "instance_role_policy_jenkins" {
-  name = "instance_role_policy_${var.ecs_cluster_name}"
-  policy = file(
-    "/Users/eddiezhang/DevOps/eddiez0719/terraform_jenkins/ecs_instance_role_policy.json",
-  )
-  role = aws_iam_role.host_role_jenkins.id
+  name   = "instance_role_policy_${var.ecs_cluster_name}"
+  policy = file("${path.module}/ecs_instance_role_policy.json")
+  role   = aws_iam_role.host_role_jenkins.id
 }
 
 resource "aws_iam_instance_profile" "iam_instance_profile" {
