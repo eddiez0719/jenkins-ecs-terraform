@@ -217,7 +217,7 @@ resource "aws_ecs_task_definition" "jenkins_task_definition" {
    "image": "${var.jenkins_image}",
    "privileged": true,
    "cpu": 1, 
-   "memory": 5120,
+   "memory": 512,
    "essential": true,
    "environment": [
    {
