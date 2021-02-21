@@ -14,7 +14,7 @@ variable "availability_zone" {
 
 variable "jenkins_image" {
   description = "version of a jenkins image"
-  default     = "jenkins/jenkins:2.3"
+  default     = "jenkins/jenkins:latest"
 }
 
 variable "container_port" {
