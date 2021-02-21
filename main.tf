@@ -51,7 +51,7 @@ resource "aws_route_table_association" "external-jenkins" {
 
 resource "aws_security_group" "jenkins_sg" {
   name        = "jenkins_sg"
-  description = "Allow Https traffic"
+  description = "Allow https traffic"
   vpc_id      = aws_vpc.jenkins_vpc.id
 
   ingress {
