@@ -100,6 +100,7 @@ resource "aws_security_group" "jenkins_sg" {
 data "aws_ami" "amazon_linux_ecs" {
   most_recent = true
   owners      = ["amazon"]
+
   filter {
     name   = "name"
     values = ["amzn-ami-*-amazon-ecs-optimized"]
@@ -115,6 +116,35 @@ data "template_file" "user_data" {
     cluster_name = var.ecs_cluster_name
   }
 }
+
+###########Data Source for Jenkins Master#########
+
+data "aws_ami" "jenkins_master" {
+  most_recent = true
+  owners = ["amazon"]
+  
+  filter {
+    name   = "name"
+    values = ["amzn-ami-*-amazon-ecs-optimized"]
+  }
+  filter {
+    name   = "owner-alias"
+    values = ["amazon"]
+  }
+}
+
+#########Jenkins Master############################
+resource "aws_instance" "jenkins_master" {
+  ami = data.aws_ami.jenkins_master.id
+  instance_type = "${var.instance_type}"
+  vpc_security_group_ids = [aws_security_group.jenkins_sg.id]
+  subnet_id = "${aws_subnet.jenkins_subnet.id}"
+  iam_instance_profile = aws_iam_instance_profile.iam_instance_profile.name
+  associate_public_ip_address = true
+  user_data = data.template_file.user_data.rendered
+}
+
+########Jenkins Slave###############################
 
 resource "aws_launch_configuration" "as_conf" {
   name_prefix                 = "jenkins-lc"
